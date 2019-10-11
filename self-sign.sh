@@ -82,6 +82,7 @@ read importaroot
 case $importaroot in
 	s|S)
 	cp ${cakey}.crt /etc/pki/ca-trust/source/anchors/
+	update-ca-trust enable
 	update-ca-trust extract
 	;;
 	n|N)
