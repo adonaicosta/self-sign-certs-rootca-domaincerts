@@ -38,7 +38,7 @@ esac
 echo ""
 echo "Informe o dominio/url completo para compor o nome dos arquivos key, csr e crt"
 echo "Inform full domain/url - FQDN to create your cert files key, csr and finally crt"
-echo "> _"
+echo -en "> _"
 read domain
 	if [ $resp -eq "q"-o $resp -eq "Q" ]; then
 		exit 127
@@ -46,10 +46,10 @@ read domain
 echo ""
 echo "Qual o rootCA que vai assinar o seu certificado?"
 echo "Here, what rootCA file will sign your domain certificate?"
-echo "\t$(ls root*key|cut -d"." -f1)"
-echo "> _"
+echo -en "\n\t$(ls root*key|cut -d"." -f1)\n"
+echo -en "> _"
 read cakey
-	if [ $resp -eq "q"-o $resp -eq "Q" ]; then
+	if [ $resp -eq "q" -o $resp -eq "Q" ]; then
 		exit 127
 	fi
 echo ""
