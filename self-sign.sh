@@ -1,18 +1,15 @@
 #!/bin/bash
 
 echo "A qualquer momento se pressionar \"Q\" ou \"q\" o programa aborta"
-echo "Any time press q or Q to abort program"
 echo ""
 
 echo "Voce quer criar um rootCA ? y/n"
-echo "Are you want create your own rootCA? y/n"
 echo -en "> _ "
 read resp
 case $resp in
         y|Y)
         echo ""
         echo "Qual o nome do seu ROOTCA/Dominio?"
-        echo "What name of your ROOTCA/Domain?"
         echo -en "> _ "
         read resp1
         if [ $resp1 = "q" -o $resp1 = "Q" -o -z $resp1 ]; then
@@ -20,10 +17,8 @@ case $resp in
         fi
         echo ""
         echo "O seu rootCA sera gerado com o nome \" rootCA-$resp1 \""
-        echo "Your rootCA file will be create with name \" rootCA-$resp1 \""
         echo ""
         echo "Lembre, uma senha sera solicitada ao fim do processo, eh com ela que vc vai assinar os certificados"
-        echo "Don't forget to inform and keep safe a password to sign all future certificates"
         echo "Press ENTER..."
         read wait
         openssl genrsa -des3 -out rootCA-${resp1}.key 4096
@@ -60,7 +55,6 @@ case $resp in
         n|N)
         echo ""
         echo "OK, indo para criacao de certificado assinado"
-        echo "OK, goes to creation your own domain cert self-signed"
         echo "Press ENTER..."
         read wait
         echo ""
@@ -73,7 +67,6 @@ esac
 
 echo ""
 echo "Informe o dominio/url completo para compor o nome dos arquivos key, csr e crt"
-echo "Inform full domain/url - FQDN to create your cert files key, csr and finally crt"
 echo -en "> _ "
 read domain
         if [ $domain = "q" -o $domain = "Q" ]; then
@@ -86,7 +79,6 @@ read domain
         fi
 echo ""
 echo "Qual o rootCA que vai assinar o seu certificado?"
-echo "Here, what rootCA file will sign your domain certificate?"
 echo -en "\n\t$(ls rootCA*key|cut -d"." -f1)\n"
 echo -en "> _ "
 read cakey
@@ -102,7 +94,6 @@ read cakey
         fi
 echo ""
 echo "Agora responda as perguntas e o CN deve ser o host.dominio"
-echo "Now, answer questions about your certificate, remember, CN field must be your FQDN choosed early."
 echo "Press ENTER..."
 read wait
 echo ""
@@ -112,8 +103,7 @@ openssl req -new -newkey rsa:4098 -nodes -keyout ${domain}.key -out ${domain}.cs
 echo -en "\n\n"
 
 echo "Assinando o pedido de certificado ${domain}.csr com o ${cakey} informado"
-echo "Signing your csr file with rootCA file choosed"
-echo "Press any key..."
+echo "Press ENTER..."
 read wait
 echo ""
 openssl x509 -req -in ${domain}.csr -CA ${cakey}.crt -CAkey ${cakey}.key -CAcreateserial -out ${domain}.crt -days 1500 -sha256
@@ -130,25 +120,42 @@ echo -en "\nOs arquivos a seguir foram criados/The files was created
      - ${domain}.csr - [e o seu cert server request, usado para gerar seu crt, use no seus servicos tb]
 "
 echo -en "\n\n"
-echo "Just for Centos/Redhat distribuition"
+grep rhel /etc/os-release > /dev/null 2>&1
+rhel=${?}
+grep deb /etc/os-release > /dev/null 2>&1
+deb=${?}
 echo "Gerando lista de certificados validos nesse servidor - arquivo certificados-daqui.txt"
-awk -v cmd='openssl x509 -noout -subject' '/BEGIN/{close(cmd)};{print | cmd}' < /etc/pki/ca-trust/extracted/openssl/ca-bundle.trust.crt  > certificados-daqui.txt
-sleep 3
-echo -en "\n\n"
+
 echo "O arquivo ${cakey}.crt sera importado nessa maquina?"
 echo -en "> _ "
 read importaroot
 case $importaroot in
         s|S)
+        if [ $rhel -eq 0 ]; then 
         cp ${cakey}.crt /etc/pki/ca-trust/source/anchors/
         update-ca-trust enable
         update-ca-trust extract
+        elif [ $deb -eq 0 ]; then
+        cp ${cakey}.crt /usr/local/share/ca-certificates/
+        update-ca-certificates
+        else
+        echo "SO nao identificado como Debian-like ou RHEL-like"
+        fi
         ;;
         *)
-        echo -en "\n\nConfira no extrato do arquivo certificados-daqui.txt se o ${cakey}.crt foi importado"
+        echo -en "\n\nImporte e confira no extrato do arquivo certificados-daqui.txt se o ${cakey}.crt foi importado"
         ;;
 esac
-echo ""
+if [ $rhel -eq 0 ]; then
+  awk -v cmd='openssl x509 -noout -subject' '/BEGIN/{close(cmd)};{print | cmd}' < /etc/pki/ca-trust/extracted/openssl/ca-bundle.trust.crt  > certificados-daqui.txt
+  sleep 3
+elif [ $deb -eq 0 ]; then
+  awk -v cmd='openssl x509 -noout -subject' '/BEGIN/{close(cmd)};{print | cmd}' < /etc/ssl/certs/ca-certificates.crt  > certificados-daqui.txt  
+  sleep 3
+else
+  echo "SO nao identificado como RHEL-like ou Debian-like"
+fi
+echo -en "\n\n"
 
 echo "Para importar para um keystore do java execute o comando abaixo"
 echo "$JAVA_HOME/bin/keytool -import -alias <give_it_a_name_here> -keystore $JAVA_HOME/jre/lib/security/cacerts <ou keystore.jks>. -file /root/certificate.cer ou crt"
