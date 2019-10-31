@@ -7,7 +7,7 @@ echo "Voce quer criar um rootCA ? y/n"
 echo -en "> _ "
 read resp
 case $resp in
-        y|Y)
+        y|Y|S|s)
         echo ""
         echo "Qual o nome do seu ROOTCA/Dominio?"
         echo -en "> _ "
@@ -85,7 +85,7 @@ read cakey
         if [ $cakey = "q" -o $cakey = "Q" ]; then
                 echo "Abortando a pedido...."
                 exit 127
-        elif [ !-z $cakey ]; then
+        elif [ ! -z $cakey ]; then
                 echo "CA key nao informada"
                 exit 127
         elif [ ! -f "${cakey}.key" ]; then
@@ -130,7 +130,7 @@ echo "O arquivo ${cakey}.crt sera importado nessa maquina?"
 echo -en "> _ "
 read importaroot
 case $importaroot in
-        s|S)
+        s|S|y|Y)
         if [ $rhel -eq 0 ]; then 
         cp ${cakey}.crt /etc/pki/ca-trust/source/anchors/
         update-ca-trust enable
